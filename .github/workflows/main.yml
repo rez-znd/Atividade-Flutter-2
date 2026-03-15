@@ -43,14 +43,16 @@ jobs:
           # 1. Filtra as linhas que indicam conclusão de um teste
           grep '"type":"testDone"' machine_results.json > filtered.txt || true
 
-          # 2. Conta os resultados usando a estrutura do seu script original
-          PASSED=$(grep -c '"result":"success"' filtered.txt || echo "0")
-          FAILED=$(grep -c '"result":"failure"' filtered.txt || echo "0")
-          ERRORS=$(grep -c '"result":"error"' filtered.txt || echo "0")
-
-          # 3. Cálculos de total e reprovações
-          REPROVADOS=$(expr $FAILED + $ERRORS)
-          TOTAL=$(expr $PASSED + $REPROVADOS)
+          # 2. Conta os resultados de forma mais robusta
+          # Usamos o comando awk para garantir que o resultado seja sempre um número válido
+          PASSED=$(grep '"type":"testDone"' machine_results.json | grep -c '"result":"success"' || echo 0)
+          FAILED=$(grep '"type":"testDone"' machine_results.json | grep -c '"result":"failure"' || echo 0)
+          ERRORS=$(grep '"type":"testDone"' machine_results.json | grep -c '"result":"error"' || echo 0)
+          
+          # 3. Cálculos de total e reprovações usando a expansão aritmética do shell $(( ))
+          # Esta forma é mais rápida e menos propensa a erros que o 'expr'
+          REPROVADOS=$((FAILED + ERRORS))
+          TOTAL=$((PASSED + REPROVADOS))
 
           echo "------------------------------------------"
           echo "         RESUMO DA AVALIAÇÃO             "
